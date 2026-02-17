@@ -117,7 +117,7 @@ function DecorativeMap({ currentStop, started }: { currentStop: number; started:
         <ellipse cx="55" cy="15" rx="14" ry="8" fill="rgba(232,104,160,0.06)" />
 
         {/* Water features */}
-        <ellipse cx="60" cy="40" rx="8" ry="4" fill="rgba(74,144,217,0.15)" rx="2" />
+        <ellipse cx="60" cy="40" rx="8" ry="4" fill="rgba(74,144,217,0.15)" />
         <ellipse cx="80" cy="70" rx="6" ry="3" fill="rgba(74,144,217,0.12)" />
 
         {/* Tree clusters */}

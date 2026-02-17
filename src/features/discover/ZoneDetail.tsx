@@ -102,7 +102,7 @@ export default function ZoneDetail() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-md)' }}>
             {zone.activities.map((activity) => (
               <motion.div
-                key={activity}
+                key={activity.name}
                 whileTap={{ scale: 0.95 }}
                 className="card"
                 style={{
@@ -124,10 +124,10 @@ export default function ZoneDetail() {
                   justifyContent: 'center',
                   color: 'var(--green-rich)',
                 }}>
-                  {activityIcons[activity] || <Calendar size={20} />}
+                  {activityIcons[activity.name] || <Calendar size={20} />}
                 </div>
                 <span className="t-caption" style={{ fontWeight: 600, textAlign: 'center' }}>
-                  {activity}
+                  {activity.name}
                 </span>
               </motion.div>
             ))}
