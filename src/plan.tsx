@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, ChevronLeft, ChevronRight, Calendar, Users, Package, Sliders, MapPin, Star, Clock, Route as RouteIcon, Navigation, Share2, Bookmark, Check, Shuffle, QrCode, Camera as CameraIcon, HelpCircle } from 'lucide-react'
+import { Sparkles, ChevronLeft, ChevronRight, Calendar, Users, Package, Sliders, MapPin, Star, Clock, Route as RouteIcon, Navigation, Share2, Bookmark, Check, Shuffle, QrCode, Camera as CameraIcon, HelpCircle, Baby, Accessibility, Bike, Plus, Minus, Tag } from 'lucide-react'
 import { useApp } from './context'
 import { animals, curatedPlans, defaultPlanStops } from './data'
 import { BackHeader, PageTransition, SectionHeader } from './components'
@@ -12,6 +12,7 @@ import { BackHeader, PageTransition, SectionHeader } from './components'
 
 export function PlanTab() {
   const navigate = useNavigate()
+  const { setWanderMode, setActivePlan } = useApp()
 
   return (
     <PageTransition>
@@ -67,10 +68,10 @@ export function PlanTab() {
                 No plan? No problem. Let AI guide you one discovery at a time.
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-sm" style={{ background: 'var(--gold)', color: 'white' }}>
+                <button onClick={() => { setWanderMode(true); navigate('/map') }} className="btn btn-sm" style={{ background: 'var(--gold)', color: 'white' }}>
                   <Shuffle size={14} /> Relaxed
                 </button>
-                <button className="btn btn-sm btn-secondary">
+                <button onClick={() => { setWanderMode(true); navigate('/map') }} className="btn btn-sm btn-secondary">
                   ⚡ Adventurous
                 </button>
               </div>
@@ -188,6 +189,7 @@ export function PlanTab() {
 
 export function PlanBuilder() {
   const navigate = useNavigate()
+  const { setActivePlan: saveActivePlan } = useApp()
   const [step, setStep] = useState(1)
   const [generating, setGenerating] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -195,9 +197,31 @@ export function PlanBuilder() {
   const [duration, setDuration] = useState('full')
   const [pace, setPace] = useState('balanced')
   const [mustSee, setMustSee] = useState<string[]>([])
+  const [equipment, setEquipment] = useState<Record<string, number>>({})
+
+  const equipmentOptions = [
+    { id: 'stroller-single', label: 'Single Stroller', emoji: '👶', price: 12, icon: Baby },
+    { id: 'stroller-double', label: 'Double Stroller', emoji: '👶👶', price: 18, icon: Baby },
+    { id: 'wheelchair', label: 'Wheelchair', emoji: '♿', price: 0, sub: 'Complimentary', icon: Accessibility },
+    { id: 'wagon', label: 'Kids Wagon', emoji: '🛒', price: 15, icon: Bike },
+  ]
 
   const handleGenerate = () => {
     setGenerating(true)
+    saveActivePlan({
+      date: selectedDate || 'Today',
+      stops: mustSee.slice(0, 5).map((id, i) => ({
+        id,
+        name: animals.find(a => a.id === id)?.name || id,
+        emoji: animals.find(a => a.id === id)?.emoji || '🦁',
+        time: `${9 + i}:${i % 2 === 0 ? '00' : '30'} AM`,
+        duration: '30 min',
+        insight: 'AI-optimized stop',
+        completed: false,
+      })),
+      totalDuration: '3.5 hours',
+      distance: '2.1 miles',
+    })
     setTimeout(() => navigate('/plan/itinerary'), 3000)
   }
 
@@ -261,7 +285,7 @@ export function PlanBuilder() {
           </button>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', gap: 4 }}>
-              {[1, 2, 3, 4].map(i => (
+              {[1, 2, 3, 4, 5].map(i => (
                 <div key={i} style={{
                   flex: 1,
                   height: 3,
@@ -271,7 +295,7 @@ export function PlanBuilder() {
                 }} />
               ))}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6 }}>Step {step} of 4</div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6 }}>Step {step} of 5</div>
           </div>
         </div>
 
@@ -364,9 +388,113 @@ export function PlanBuilder() {
               </motion.div>
             )}
 
-            {/* Step 3: Preferences */}
+            {/* Step 3: Equipment */}
             {step === 3 && (
               <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <h2 className="t-display-md" style={{ marginBottom: 4 }}>Need any<br />equipment?</h2>
+                <p className="t-body text-secondary" style={{ marginBottom: 20 }}>
+                  Reserve ahead and skip the line at pickup
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                  {equipmentOptions.map(item => {
+                    const qty = equipment[item.id] || 0
+                    return (
+                      <div
+                        key={item.id}
+                        className="card"
+                        style={{
+                          padding: 16,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 14,
+                          border: qty > 0 ? '2px solid var(--green-rich)' : '1.5px solid var(--border)',
+                          background: qty > 0 ? 'var(--green-pale)' : 'var(--bg-card)',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        <div style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 12,
+                          background: qty > 0 ? 'var(--green-light)' : 'var(--bg-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 24,
+                          flexShrink: 0,
+                        }}>
+                          {item.emoji}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>{item.label}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                            {item.sub || `$${item.price}/day`}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {qty > 0 && (
+                            <button
+                              onClick={() => setEquipment(prev => {
+                                const next = { ...prev }
+                                if (next[item.id] <= 1) delete next[item.id]
+                                else next[item.id]--
+                                return next
+                              })}
+                              style={{
+                                width: 32, height: 32, borderRadius: 8,
+                                border: '1px solid var(--border)', background: 'white',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}
+                            >
+                              <Minus size={14} />
+                            </button>
+                          )}
+                          {qty > 0 && (
+                            <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{qty}</span>
+                          )}
+                          <button
+                            onClick={() => setEquipment(prev => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }))}
+                            style={{
+                              width: 32, height: 32, borderRadius: 8,
+                              border: '1px solid var(--border)', background: 'white',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {Object.keys(equipment).length > 0 && (
+                  <div style={{
+                    padding: 12,
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--green-pale)',
+                    fontSize: 13,
+                    color: 'var(--green-rich)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginBottom: 16,
+                  }}>
+                    <Sparkles size={16} />
+                    Equipment will be ready at the main entrance when you arrive
+                  </div>
+                )}
+
+                <button onClick={() => setStep(4)} className="btn btn-primary btn-full">
+                  {Object.keys(equipment).length > 0 ? 'Continue' : 'Skip — No Equipment Needed'}
+                </button>
+              </motion.div>
+            )}
+
+            {/* Step 4: Preferences */}
+            {step === 4 && (
+              <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <h2 className="t-display-md" style={{ marginBottom: 20 }}>How do you want<br />your day?</h2>
 
                 <div style={{ marginBottom: 20 }}>
@@ -403,13 +531,13 @@ export function PlanBuilder() {
                   </div>
                 </div>
 
-                <button onClick={() => setStep(4)} className="btn btn-primary btn-full">Continue</button>
+                <button onClick={() => setStep(5)} className="btn btn-primary btn-full">Continue</button>
               </motion.div>
             )}
 
-            {/* Step 4: Must-See */}
-            {step === 4 && (
-              <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            {/* Step 5: Must-See */}
+            {step === 5 && (
+              <motion.div key="s5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <h2 className="t-display-md" style={{ marginBottom: 4 }}>Must-see<br />exhibits</h2>
                 <p className="t-body text-secondary" style={{ marginBottom: 20 }}>Select your favorites</p>
 
@@ -462,6 +590,117 @@ export function PlanBuilder() {
         </div>
       </div>
     </PageTransition>
+  )
+}
+
+/* ============================================
+   Add-Ons Section (used in Itinerary Result)
+   ============================================ */
+
+function AddOnsSection() {
+  const [selected, setSelected] = useState<string[]>([])
+  const [promoCode, setPromoCode] = useState('')
+  const [promoApplied, setPromoApplied] = useState(false)
+
+  const addOns = [
+    { id: 'parking', label: 'Preferred Parking', desc: 'Reserved spot near main entrance', price: '$15', emoji: '🅿️' },
+    { id: 'guided-tour', label: 'Guided Tour Upgrade', desc: 'Expert-led 90min guided tour', price: '$25/person', emoji: '🎙️' },
+    { id: 'meal-deal', label: 'Family Meal Deal', desc: '4 meals + 4 drinks + 2 snacks', price: '$68', emoji: '🍔', badge: 'Save 20%' },
+    { id: 'photo-pass', label: 'Photo Pass', desc: 'Unlimited digital photos all day', price: '$30', emoji: '📸' },
+  ]
+
+  const toggle = (id: string) => {
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  return (
+    <div style={{ marginTop: 20 }}>
+      <div className="t-heading" style={{ marginBottom: 12 }}>Enhance Your Day</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+        {addOns.map(addon => (
+          <motion.button
+            key={addon.id}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => toggle(addon.id)}
+            className="card"
+            style={{
+              padding: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              width: '100%',
+              textAlign: 'left',
+              border: selected.includes(addon.id) ? '2px solid var(--green-rich)' : '1.5px solid var(--border)',
+              background: selected.includes(addon.id) ? 'var(--green-pale)' : 'var(--bg-card)',
+              transition: 'all 0.2s ease',
+              position: 'relative',
+            }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: selected.includes(addon.id) ? 'var(--green-light)' : 'var(--bg-primary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 22, flexShrink: 0,
+            }}>
+              {addon.emoji}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{addon.label}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{addon.desc}</div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{addon.price}</div>
+              {addon.badge && (
+                <span className="badge" style={{ background: 'var(--coral-pale)', color: 'var(--coral)', fontSize: 9, marginTop: 2 }}>
+                  {addon.badge}
+                </span>
+              )}
+            </div>
+            {selected.includes(addon.id) && (
+              <div style={{
+                position: 'absolute', top: 6, right: 6,
+                width: 18, height: 18, borderRadius: '50%',
+                background: 'var(--green-rich)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Check size={11} color="white" />
+              </div>
+            )}
+          </motion.button>
+        ))}
+      </div>
+
+      {/* Promo Code */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <Tag size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+          <input
+            type="text"
+            value={promoCode}
+            onChange={e => { setPromoCode(e.target.value); setPromoApplied(false) }}
+            placeholder="Promo code"
+            className="input"
+            style={{ paddingLeft: 34, fontSize: 14 }}
+          />
+        </div>
+        <button
+          onClick={() => promoCode && setPromoApplied(true)}
+          className="btn btn-secondary"
+          style={{ flexShrink: 0, fontSize: 13 }}
+        >
+          Apply
+        </button>
+      </div>
+      {promoApplied && (
+        <div style={{
+          marginTop: 8, padding: 8, borderRadius: 'var(--radius-sm)',
+          background: 'var(--green-pale)', fontSize: 12, color: 'var(--green-rich)',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          <Check size={14} /> Code applied — 10% off add-ons
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -586,6 +825,9 @@ export function ItineraryResult() {
               </div>
             </motion.div>
           ))}
+
+          {/* Add-ons */}
+          <AddOnsSection />
 
           {/* Booking Summary */}
           <div className="card" style={{ marginTop: 12, padding: 16 }}>

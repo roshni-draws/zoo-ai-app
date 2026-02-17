@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChevronRight, CreditCard, Clock, Users, Heart, Award, Brain, Gift, Settings as SettingsIcon, Bell, Globe, Accessibility, HelpCircle, LogOut, QrCode, Star, Eye, Footprints, MapPin, Share2, ChevronLeft, BarChart3, RotateCcw, Check, Ticket } from 'lucide-react'
+import { ChevronRight, CreditCard, Clock, Users, Heart, Award, Brain, Gift, Settings as SettingsIcon, Bell, Globe, Accessibility, HelpCircle, LogOut, QrCode, Star, Eye, Footprints, MapPin, Share2, ChevronLeft, BarChart3, RotateCcw, Check, Ticket, Camera, Download, Sparkles, Route } from 'lucide-react'
 import { useApp } from './context'
 import { animals, stamps, badges } from './data'
 import { BackHeader, PageTransition, SectionHeader } from './components'
@@ -12,21 +12,21 @@ import { BackHeader, PageTransition, SectionHeader } from './components'
 
 export function ProfileTab() {
   const navigate = useNavigate()
-  const { user, setOnboarded } = useApp()
+  const { user, setOnboarded, collectedStamps } = useApp()
 
   const menuItems = [
     { icon: CreditCard, label: 'Wallet', path: '/profile/wallet', badge: '2 Active Tickets' },
     { icon: Clock, label: 'Past Visits', path: '/profile/visits', badge: '3 visits' },
     { icon: Users, label: 'My Family', path: '/profile/family', badge: '3 members' },
     { icon: Heart, label: 'Saved Animals', path: '/profile/animals', badge: '2 saved' },
-    { icon: Award, label: 'Stamps & Badges', path: '/profile/passport', badge: '18/42' },
+    { icon: Award, label: 'Stamps & Badges', path: '/profile/passport', badge: `${collectedStamps}/42` },
     { icon: Brain, label: 'AI Interests', path: '/profile/ai' },
     { icon: Gift, label: 'My Adoptions', path: '/profile/adoptions' },
   ]
 
   const settingsItems = [
     { icon: SettingsIcon, label: 'Settings', path: '/profile/settings' },
-    { icon: Bell, label: 'Notifications' },
+    { icon: Bell, label: 'Notifications', path: '/notifications' },
     { icon: Globe, label: 'Language' },
     { icon: Accessibility, label: 'Accessibility' },
     { icon: HelpCircle, label: 'Help & Support' },
@@ -233,9 +233,9 @@ export function PastVisits() {
   const navigate = useNavigate()
 
   const visits = [
-    { date: 'Feb 14, 2025', type: 'Family', animals: 12, duration: '4h 23m', distance: '3.2 mi' },
-    { date: 'Jan 14, 2025', type: 'Family', animals: 9, duration: '3h 45m', distance: '2.8 mi' },
-    { date: 'Dec 8, 2024', type: 'Couple', animals: 15, duration: '5h 10m', distance: '4.1 mi' },
+    { id: 'feb14', date: 'Feb 14, 2025', type: 'Family', animals: 12, duration: '4h 23m', distance: '3.2 mi' },
+    { id: 'jan14', date: 'Jan 14, 2025', type: 'Family', animals: 9, duration: '3h 45m', distance: '2.8 mi' },
+    { id: 'dec8', date: 'Dec 8, 2024', type: 'Couple', animals: 15, duration: '5h 10m', distance: '4.1 mi' },
   ]
 
   return (
@@ -245,12 +245,14 @@ export function PastVisits() {
         <div style={{ padding: '0 20px 100px' }}>
           {visits.map((visit, i) => (
             <motion.div
-              key={visit.date}
+              key={visit.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
               className="card card-elevated"
-              style={{ marginBottom: 12, padding: 0, overflow: 'hidden' }}
+              style={{ marginBottom: 12, padding: 0, overflow: 'hidden', cursor: 'pointer' }}
+              onClick={() => navigate(`/profile/visits/${visit.id}`)}
+              whileTap={{ scale: 0.98 }}
             >
               <div style={{
                 height: 100,
@@ -277,8 +279,8 @@ export function PastVisits() {
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-sm btn-primary" style={{ flex: 1, fontSize: 12 }}><Share2 size={12} /> Share Recap</button>
-                  <button onClick={() => navigate('/plan/builder')} className="btn btn-sm btn-secondary" style={{ flex: 1, fontSize: 12 }}>
+                  <button onClick={(e) => { e.stopPropagation(); navigate(`/profile/visits/${visit.id}/share`) }} className="btn btn-sm btn-primary" style={{ flex: 1, fontSize: 12 }}><Share2 size={12} /> Share Recap</button>
+                  <button onClick={(e) => { e.stopPropagation(); navigate('/plan/builder') }} className="btn btn-sm btn-secondary" style={{ flex: 1, fontSize: 12 }}>
                     <RotateCcw size={12} /> Plan Similar
                   </button>
                 </div>
@@ -391,7 +393,7 @@ export function SavedAnimals() {
                   height: 60,
                   borderRadius: 12,
                   overflow: 'hidden',
-                  background: '#e8e2da',
+                  background: 'var(--bg-placeholder)',
                   flexShrink: 0,
                 }}>
                   <img src={animal.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -414,6 +416,8 @@ export function SavedAnimals() {
    ============================================ */
 
 export function Passport() {
+  const { collectedStamps } = useApp()
+  const totalStamps = 42
   return (
     <PageTransition>
       <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)' }}>
@@ -428,11 +432,11 @@ export function Passport() {
           }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>🎖️</div>
             <div style={{ color: 'white', fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600 }}>
-              18 / 42
+              {collectedStamps} / {totalStamps}
             </div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>stamps collected</div>
             <div className="progress-bar" style={{ marginTop: 16, background: 'rgba(255,255,255,0.2)' }}>
-              <div className="progress-bar-fill" style={{ width: `${(18 / 42) * 100}%`, background: 'var(--gold)' }} />
+              <div className="progress-bar-fill" style={{ width: `${(collectedStamps / totalStamps) * 100}%`, background: 'var(--gold)' }} />
             </div>
           </div>
 
@@ -615,7 +619,7 @@ export function Adoptions() {
                 height: 64,
                 borderRadius: 14,
                 overflow: 'hidden',
-                background: '#e8e2da',
+                background: 'var(--bg-placeholder)',
                 flexShrink: 0,
               }}>
                 <img src={animals[0].image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -647,7 +651,7 @@ export function Adoptions() {
                 height: 50,
                 borderRadius: 12,
                 overflow: 'hidden',
-                background: '#e8e2da',
+                background: 'var(--bg-placeholder)',
                 flexShrink: 0,
               }}>
                 <img src={animal.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -666,12 +670,464 @@ export function Adoptions() {
 }
 
 /* ============================================
+   Visit Recap Detail
+   ============================================ */
+
+const recapJourney = [
+  { time: '9:00 AM', name: 'Arrived at Zoo', emoji: '🚗', dwell: '', type: 'start' },
+  { time: '9:15 AM', name: 'African Lions', emoji: '🦁', dwell: '12 min', type: 'animal' },
+  { time: '9:45 AM', name: 'Giraffes', emoji: '🦒', dwell: '8 min', type: 'animal' },
+  { time: '10:10 AM', name: 'Elephant Odyssey', emoji: '🐘', dwell: '15 min', type: 'animal' },
+  { time: '10:40 AM', name: 'Sea Lion Feeding', emoji: '🐟', dwell: '20 min', type: 'event' },
+  { time: '11:15 AM', name: "Albert's Restaurant", emoji: '🍽️', dwell: '35 min', type: 'dining' },
+  { time: '12:00 PM', name: 'Penguin Beach', emoji: '🐧', dwell: '10 min', type: 'animal' },
+  { time: '12:25 PM', name: 'Gorilla Forest', emoji: '🦍', dwell: '14 min', type: 'animal' },
+  { time: '12:50 PM', name: 'Polar Bear Plunge', emoji: '🐻‍❄️', dwell: '11 min', type: 'animal' },
+  { time: '1:10 PM', name: 'Gift Shop', emoji: '🎁', dwell: '15 min', type: 'shop' },
+  { time: '1:25 PM', name: 'Departed', emoji: '👋', dwell: '', type: 'end' },
+]
+
+const recapPhotos = [
+  { emoji: '🦁', caption: 'Izu posing' },
+  { emoji: '🐘', caption: 'Tembo waving' },
+  { emoji: '🐧', caption: 'Penguin parade' },
+  { emoji: '🦍', caption: 'Silverback closeup' },
+  { emoji: '🐻‍❄️', caption: 'Polar bear swim' },
+  { emoji: '👨‍👩‍👧‍👦', caption: 'Family selfie' },
+]
+
+export function VisitRecap() {
+  const navigate = useNavigate()
+  const [shareOpen, setShareOpen] = useState(false)
+
+  const typeColor: Record<string, string> = {
+    animal: 'var(--green-rich)',
+    event: 'var(--coral)',
+    dining: 'var(--gold)',
+    shop: 'var(--amber)',
+    start: 'var(--text-tertiary)',
+    end: 'var(--text-tertiary)',
+  }
+
+  return (
+    <PageTransition>
+      <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)' }}>
+        <BackHeader title="Visit Recap" />
+        <div style={{ padding: '0 20px 100px' }}>
+          {/* Hero */}
+          <div className="card-gradient" style={{
+            borderRadius: 'var(--radius-xl)',
+            padding: 24,
+            marginBottom: 24,
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>SAN DIEGO ZOO</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 600, color: 'white', marginBottom: 4 }}>
+              February 14, 2025
+            </div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 16 }}>Family Visit</div>
+            <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
+              {[
+                { icon: <Clock size={14} />, value: '4h 23m', label: 'Duration' },
+                { icon: <Footprints size={14} />, value: '3.2 mi', label: 'Walked' },
+                { icon: <Eye size={14} />, value: '12', label: 'Animals' },
+                { icon: <Award size={14} />, value: '5', label: 'Stamps' },
+              ].map(s => (
+                <div key={s.label}>
+                  <div style={{ color: 'var(--gold)', marginBottom: 2 }}>{s.icon}</div>
+                  <div style={{ color: 'white', fontWeight: 700, fontSize: 17 }}>{s.value}</div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* AI Summary */}
+          <div className="card" style={{
+            marginBottom: 20,
+            padding: 16,
+            background: 'var(--green-pale)',
+            border: '1px solid var(--green-light)',
+          }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <Sparkles size={16} color="var(--green-rich)" />
+              <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--green-rich)' }}>AI Summary</span>
+            </div>
+            <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+              A wonderful family day! You focused on large mammals — Izu the lion was your star stop (12 min).
+              Ella loved the penguin parade, while Kai was fascinated by the polar bears.
+              You covered the south side well. The north side (Monkey Trail, Australian Outback) awaits your next visit!
+            </p>
+          </div>
+
+          {/* Journey Timeline */}
+          <SectionHeader title="Your Journey" />
+          <div className="card" style={{ padding: '12px 16px', marginBottom: 20 }}>
+            {recapJourney.map((stop, i) => (
+              <div key={i} style={{
+                display: 'flex',
+                gap: 12,
+                paddingBottom: i < recapJourney.length - 1 ? 12 : 0,
+                borderLeft: i < recapJourney.length - 1 ? `2px solid ${typeColor[stop.type] || 'var(--border-light)'}` : 'none',
+                marginLeft: 8,
+                paddingLeft: 16,
+                position: 'relative',
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  left: -7,
+                  top: 2,
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  background: typeColor[stop.type] || 'var(--border)',
+                  border: '2px solid var(--bg-primary)',
+                }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>{stop.emoji} {stop.name}</span>
+                    {stop.dwell && (
+                      <span style={{ fontSize: 11, color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '2px 8px', borderRadius: 10 }}>
+                        {stop.dwell}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{stop.time}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Animals Seen */}
+          <SectionHeader title="Animals You Met" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 20 }}>
+            {animals.slice(0, 6).map(animal => (
+              <motion.div
+                key={animal.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate(`/discover/animal/${animal.id}`)}
+                className="card"
+                style={{ padding: 10, textAlign: 'center', cursor: 'pointer' }}
+              >
+                <div style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  borderRadius: 'var(--radius-md)',
+                  overflow: 'hidden',
+                  marginBottom: 6,
+                  background: 'var(--bg-placeholder)',
+                }}>
+                  <img src={animal.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600 }}>{animal.emoji} {animal.individual || animal.name}</div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Photos */}
+          <SectionHeader title="Photo Memories" />
+          <div className="scroll-x" style={{ marginLeft: -20, marginRight: -20, marginBottom: 20, paddingLeft: 20, paddingRight: 20 }}>
+            {recapPhotos.map((photo, i) => (
+              <div key={i} style={{
+                width: 120,
+                flexShrink: 0,
+              }}>
+                <div style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 40,
+                  marginBottom: 4,
+                  position: 'relative',
+                }}>
+                  {photo.emoji}
+                  <Camera size={14} color="var(--text-tertiary)" style={{ position: 'absolute', bottom: 6, right: 6 }} />
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)', textAlign: 'center' }}>{photo.caption}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Stamps Collected */}
+          <SectionHeader title="Stamps Collected" />
+          <div className="card" style={{ padding: 16, marginBottom: 20 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 12 }}>
+              {['🦁', '🦒', '🐘', '🐧', '🦍'].map((s, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ scale: 0, rotate: -20 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: i * 0.1, type: 'spring' }}
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 14,
+                    background: 'var(--gold-pale)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 26,
+                    border: '2px solid var(--gold)',
+                  }}
+                >{s}</motion.div>
+              ))}
+            </div>
+            <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)' }}>
+              5 of 42 total stamps · <button onClick={() => navigate('/profile/passport')} style={{ color: 'var(--green-rich)', fontWeight: 600 }}>View Passport</button>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            <button
+              onClick={() => navigate(`/profile/visits/feb14/share`)}
+              className="btn btn-primary"
+              style={{ flex: 1 }}
+            >
+              <Share2 size={16} /> Share Visit Card
+            </button>
+            <button onClick={() => navigate('/plan/builder')} className="btn btn-secondary" style={{ flex: 1 }}>
+              <RotateCcw size={16} /> Plan Return
+            </button>
+          </div>
+        </div>
+      </div>
+    </PageTransition>
+  )
+}
+
+/* ============================================
+   Shareable Visit Card
+   ============================================ */
+
+export function ShareableCard() {
+  const navigate = useNavigate()
+  const [cardStyle, setCardStyle] = useState<'classic' | 'minimal' | 'photo'>('classic')
+
+  return (
+    <PageTransition>
+      <div style={{ minHeight: '100dvh', background: 'var(--bg-primary)' }}>
+        <BackHeader title="Share Your Visit" />
+        <div style={{ padding: '0 20px 100px' }}>
+          {/* Style Selector */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+            {(['classic', 'minimal', 'photo'] as const).map(s => (
+              <button
+                key={s}
+                onClick={() => setCardStyle(s)}
+                className={`chip ${cardStyle === s ? 'chip-active' : ''}`}
+                style={{ flex: 1, justifyContent: 'center', fontSize: 12 }}
+              >
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {/* Card Preview */}
+          <motion.div
+            key={cardStyle}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              borderRadius: 'var(--radius-xl)',
+              overflow: 'hidden',
+              marginBottom: 24,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+            }}
+          >
+            {cardStyle === 'classic' && (
+              <div style={{
+                background: 'linear-gradient(145deg, var(--green-deep), var(--green-rich), #1a5c3a)',
+                padding: 28,
+                minHeight: 380,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 2, marginBottom: 8 }}>SAN DIEGO ZOO</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'white', marginBottom: 4 }}>
+                    Family Adventure
+                  </div>
+                  <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>February 14, 2025</div>
+                </div>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', margin: '24px 0' }}>
+                  {['🦁', '🐘', '🐧', '🦍', '🐻‍❄️'].map((e, i) => (
+                    <div key={i} style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 14,
+                      background: 'rgba(255,255,255,0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 24,
+                    }}>{e}</div>
+                  ))}
+                </div>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 16 }}>
+                    {[
+                      { value: '4h 23m', label: 'Duration' },
+                      { value: '12', label: 'Animals' },
+                      { value: '3.2 mi', label: 'Walked' },
+                      { value: '5', label: 'Stamps' },
+                    ].map(s => (
+                      <div key={s.label} style={{ textAlign: 'center' }}>
+                        <div style={{ color: 'var(--gold)', fontWeight: 700, fontSize: 17 }}>{s.value}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{
+                    textAlign: 'center',
+                    fontSize: 11,
+                    color: 'rgba(255,255,255,0.3)',
+                    borderTop: '1px solid rgba(255,255,255,0.1)',
+                    paddingTop: 12,
+                  }}>
+                    Created with Zoo AI · sandiegozoo.org
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {cardStyle === 'minimal' && (
+              <div style={{
+                background: 'var(--bg-primary)',
+                border: '2px solid var(--border)',
+                borderRadius: 'var(--radius-xl)',
+                padding: 28,
+                minHeight: 380,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 600, letterSpacing: 2 }}>SAN DIEGO ZOO</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 600, color: 'var(--green-deep)', marginTop: 8 }}>
+                    Feb 14
+                  </div>
+                  <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Family Visit · 2025</div>
+                </div>
+                <div style={{ fontSize: 60, textAlign: 'center', letterSpacing: 8, margin: '20px 0' }}>
+                  🦁🐘🐧🦍🐻‍❄️
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-light)', paddingTop: 16 }}>
+                  {[
+                    { value: '4h 23m', label: 'Duration' },
+                    { value: '12 animals', label: 'Seen' },
+                    { value: '3.2 mi', label: 'Walked' },
+                  ].map(s => (
+                    <div key={s.label}>
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>{s.value}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {cardStyle === 'photo' && (
+              <div style={{
+                background: 'linear-gradient(145deg, var(--gold), #c4930a)',
+                padding: 28,
+                minHeight: 380,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: 2 }}>OUR DAY AT THE ZOO</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, color: 'white', marginTop: 8 }}>
+                    The Adventure Family
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, margin: '20px 0' }}>
+                  {['🦁', '🐘', '🐧', '👨‍👩‍👧‍👦'].map((e, i) => (
+                    <div key={i} style={{
+                      aspectRatio: '1',
+                      borderRadius: 'var(--radius-md)',
+                      background: 'rgba(255,255,255,0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 40,
+                    }}>{e}</div>
+                  ))}
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: 'white', fontWeight: 600, fontSize: 15 }}>Feb 14, 2025 · 12 Animals · 5 Stamps</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 8 }}>
+                    Created with Zoo AI · sandiegozoo.org
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Share Actions */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <button className="btn btn-primary" style={{ flex: 1 }}>
+              <Share2 size={16} /> Share
+            </button>
+            <button className="btn btn-secondary" style={{ flex: 1 }}>
+              <Download size={16} /> Save Image
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 16 }}>
+            {['Instagram', 'Facebook', 'X / Twitter', 'Messages'].map(p => (
+              <button key={p} className="chip" style={{ fontSize: 12 }}>{p}</button>
+            ))}
+          </div>
+
+          <button onClick={() => navigate(-1 as any)} className="btn btn-ghost btn-full" style={{ color: 'var(--text-secondary)' }}>
+            Back to Recap
+          </button>
+        </div>
+      </div>
+    </PageTransition>
+  )
+}
+
+/* ============================================
    Settings
    ============================================ */
 
 export function Settings() {
+  const { sensorySensitivity, simplifiedMode, setSensorySensitivity, setSimplifiedMode } = useApp()
   const [notifLevel, setNotifLevel] = useState('balanced')
   const [contentDepth, setContentDepth] = useState('standard')
+
+  const Toggle = ({ on, onToggle }: { on: boolean, onToggle: () => void }) => (
+    <button
+      onClick={onToggle}
+      style={{
+        width: 44,
+        height: 26,
+        borderRadius: 13,
+        background: on ? 'var(--green-rich)' : 'var(--border)',
+        padding: 2,
+        position: 'relative',
+        transition: 'background 0.2s ease',
+      }}
+    >
+      <div style={{
+        width: 22,
+        height: 22,
+        borderRadius: '50%',
+        background: 'white',
+        marginLeft: on ? 18 : 0,
+        transition: 'margin 0.2s ease',
+        boxShadow: 'var(--shadow-sm)',
+      }} />
+    </button>
+  )
 
   return (
     <PageTransition>
@@ -698,21 +1154,7 @@ export function Settings() {
             {['Pre-visit content', 'In-park suggestions', 'Post-visit updates', 'Zoo news'].map(item => (
               <div key={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border-light)' }}>
                 <span style={{ fontSize: 14 }}>{item}</span>
-                <div style={{
-                  width: 44,
-                  height: 26,
-                  borderRadius: 13,
-                  background: 'var(--green-rich)',
-                  padding: 2,
-                }}>
-                  <div style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: '50%',
-                    background: 'white',
-                    marginLeft: 18,
-                  }} />
-                </div>
+                <Toggle on={true} onToggle={() => {}} />
               </div>
             ))}
           </div>
@@ -735,47 +1177,68 @@ export function Settings() {
             {['Audio auto-play on dwell', 'AI Spotlight during visits', 'Energy check-ins'].map(item => (
               <div key={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border-light)' }}>
                 <span style={{ fontSize: 14 }}>{item}</span>
-                <div style={{
-                  width: 44,
-                  height: 26,
-                  borderRadius: 13,
-                  background: 'var(--green-rich)',
-                  padding: 2,
-                }}>
-                  <div style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: '50%',
-                    background: 'white',
-                    marginLeft: 18,
-                  }} />
-                </div>
+                <Toggle on={true} onToggle={() => {}} />
               </div>
             ))}
           </div>
 
           <SectionHeader title="Accessibility" />
-          <div className="card" style={{ padding: 16 }}>
-            {['High contrast mode', 'Voice navigation', 'Sensory sensitivity mode'].map(item => (
-              <div key={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border-light)' }}>
-                <span style={{ fontSize: 14 }}>{item}</span>
-                <div style={{
-                  width: 44,
-                  height: 26,
-                  borderRadius: 13,
-                  background: 'var(--border)',
-                  padding: 2,
-                }}>
-                  <div style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: '50%',
-                    background: 'white',
-                  }} />
+          <div className="card" style={{ padding: 0, marginBottom: 20, overflow: 'hidden' }}>
+            {/* Sensory Sensitivity */}
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 18 }}>🔇</span>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>Sensory Sensitivity Mode</span>
                 </div>
+                <Toggle on={sensorySensitivity} onToggle={() => setSensorySensitivity(!sensorySensitivity)} />
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4, marginLeft: 28 }}>
+                Shows noise levels on exhibits, suggests quiet routes, and reduces animations.
+              </p>
+            </div>
+
+            {/* Simplified Interface */}
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 18 }}>🔤</span>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>Simplified Interface</span>
+                </div>
+                <Toggle on={simplifiedMode} onToggle={() => setSimplifiedMode(!simplifiedMode)} />
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4, marginLeft: 28 }}>
+                Larger text, bigger buttons, and fewer on-screen elements for easier navigation.
+              </p>
+            </div>
+
+            {/* Static accessibility options */}
+            {['High contrast mode', 'Voice navigation'].map(item => (
+              <div key={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid var(--border-light)' }}>
+                <span style={{ fontSize: 14 }}>{item}</span>
+                <Toggle on={false} onToggle={() => {}} />
               </div>
             ))}
           </div>
+
+          {/* Active Modes Summary */}
+          {(sensorySensitivity || simplifiedMode) && (
+            <div className="card" style={{
+              padding: 14,
+              background: 'var(--green-pale)',
+              border: '1px solid var(--green-light)',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--green-rich)', marginBottom: 6 }}>Active Accessibility Modes</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {sensorySensitivity && (
+                  <span className="badge badge-active" style={{ fontSize: 11 }}>🔇 Sensory Sensitivity</span>
+                )}
+                {simplifiedMode && (
+                  <span className="badge badge-active" style={{ fontSize: 11 }}>🔤 Simplified Interface</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </PageTransition>

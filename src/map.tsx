@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Mic, Locate, Layers, Navigation, Bookmark, Headphones, Plus, X, ChevronDown, Users, Thermometer, Route, Zap } from 'lucide-react'
+import { Search, Mic, Locate, Layers, Navigation, Bookmark, Headphones, Plus, X, ChevronDown, Users, Thermometer, Route, Zap, Compass, Clock, TrendingUp, Eye, BarChart3, Sparkles } from 'lucide-react'
 import { useApp } from './context'
 import { animals, facilities, events } from './data'
 import { PageTransition, StatusDot } from './components'
@@ -9,17 +9,54 @@ import { PageTransition, StatusDot } from './components'
 type MapLayer = 'default' | 'right-now' | 'my-plan' | 'comfort' | 'family'
 
 /* ============================================
+   Crowd Forecast Data
+   ============================================ */
+
+const crowdHours = [
+  { hour: '8am', level: 15 }, { hour: '9am', level: 30 }, { hour: '10am', level: 55 },
+  { hour: '11am', level: 80 }, { hour: '12pm', level: 95 }, { hour: '1pm', level: 85 },
+  { hour: '2pm', level: 70 }, { hour: '3pm', level: 55 }, { hour: '4pm', level: 35 },
+  { hour: '5pm', level: 20 },
+]
+
+const zoneTraffic = [
+  { name: 'Africa Rocks', level: 'high' as const, wait: '15 min' },
+  { name: 'Elephant Odyssey', level: 'medium' as const, wait: '5 min' },
+  { name: 'Lost Forest', level: 'low' as const, wait: 'No wait' },
+  { name: 'Polar Rim', level: 'medium' as const, wait: '8 min' },
+  { name: 'Penguin Beach', level: 'high' as const, wait: '12 min' },
+  { name: 'Urban Jungle', level: 'low' as const, wait: 'No wait' },
+]
+
+const trafficColor = { high: 'var(--coral)', medium: 'var(--amber)', low: 'var(--green-rich)' }
+
+/* ============================================
    Map Tab
    ============================================ */
 
 export function MapTab() {
   const navigate = useNavigate()
-  const { setAudioPlaying, setSelectedExhibit, savedAnimals, toggleSavedAnimal } = useApp()
+  const { setAudioPlaying, setSelectedExhibit, savedAnimals, toggleSavedAnimal, wanderMode, setWanderMode, visitedExhibits, markExhibitVisited, sensorySensitivity } = useApp()
+
+  // Noise levels per exhibit for sensory sensitivity mode
+  const noiseMap: Record<string, 'quiet' | 'moderate' | 'loud'> = {
+    lion: 'moderate', elephant: 'quiet', penguin: 'loud', gorilla: 'quiet',
+    giraffe: 'quiet', 'polar-bear': 'moderate', 'red-panda': 'quiet',
+    flamingo: 'moderate', koala: 'quiet', orangutan: 'quiet',
+    hippo: 'moderate', cheetah: 'quiet',
+  }
   const [activeLayer, setActiveLayer] = useState<MapLayer>('default')
   const [selectedAnimal, setSelectedAnimal] = useState<typeof animals[0] | null>(null)
   const [showSearch, setShowSearch] = useState(false)
   const [sheetExpanded, setSheetExpanded] = useState(false)
   const [spotlightVisible, setSpotlightVisible] = useState(true)
+  const [showCrowdForecast, setShowCrowdForecast] = useState(false)
+  const [wanderIndex, setWanderIndex] = useState(0)
+  const [wanderDiscoveries, setWanderDiscoveries] = useState(0)
+  const [wanderCelebrate, setWanderCelebrate] = useState(false)
+
+  const wanderQueue = animals.filter(a => !visitedExhibits.some(v => v.id === a.id))
+  const wanderTarget = wanderQueue[wanderIndex % wanderQueue.length] || animals[0]
 
   const layers: { id: MapLayer; label: string; icon: string }[] = [
     { id: 'default', label: 'Default', icon: '🗺️' },
@@ -80,8 +117,8 @@ export function MapTab() {
             </div>
           ))}
 
-          {/* Animal pins */}
-          {activeLayer !== 'comfort' && animals.map((animal, i) => {
+          {/* Animal pins (hidden in wander mode) */}
+          {activeLayer !== 'comfort' && !wanderMode && animals.map((animal, i) => {
             const positions = [
               { x: 22, y: 25 }, { x: 60, y: 28 }, { x: 75, y: 38 },
               { x: 35, y: 40 }, { x: 50, y: 55 }, { x: 25, y: 58 },
@@ -93,6 +130,7 @@ export function MapTab() {
             const isRightNow = activeLayer === 'right-now'
             const isPlan = activeLayer === 'my-plan'
             const dimmed = isPlan && !['lion', 'giraffe', 'elephant', 'penguin', 'gorilla'].includes(animal.id)
+            const visited = visitedExhibits.find(v => v.id === animal.id)
 
             return (
               <motion.button
@@ -110,20 +148,51 @@ export function MapTab() {
                   height: isRightNow && isActive ? 52 : 44,
                   borderRadius: '50%',
                   background: 'white',
-                  boxShadow: isActive
-                    ? '0 2px 12px rgba(26, 86, 50, 0.2)'
-                    : '0 1px 6px rgba(0,0,0,0.1)',
+                  boxShadow: visited
+                    ? '0 2px 12px rgba(46, 107, 52, 0.3)'
+                    : isActive
+                      ? '0 2px 12px rgba(26, 86, 50, 0.2)'
+                      : '0 1px 6px rgba(0,0,0,0.1)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: isRightNow && isActive ? 26 : 22,
                   zIndex: 10,
-                  border: `2px solid ${isActive ? 'var(--green-rich)' : 'var(--border)'}`,
+                  border: visited
+                    ? '3px solid var(--green-rich)'
+                    : `2px solid ${isActive ? 'var(--green-rich)' : 'var(--border)'}`,
                   transition: 'all 0.3s ease',
                 }}
               >
                 <span>{animal.emoji}</span>
-                {isActive && (
+                {/* Memory Pin: visited ring glow */}
+                {visited && (
+                  <span style={{
+                    position: 'absolute',
+                    inset: -5,
+                    borderRadius: '50%',
+                    border: '2px solid var(--green-sage)',
+                    opacity: 0.5,
+                  }} />
+                )}
+                {/* Memory Pin: dwell badge */}
+                {visited && (
+                  <span style={{
+                    position: 'absolute',
+                    top: -6,
+                    right: -6,
+                    background: 'var(--green-deep)',
+                    color: 'white',
+                    fontSize: 8,
+                    fontWeight: 700,
+                    padding: '1px 4px',
+                    borderRadius: 6,
+                    border: '1.5px solid white',
+                  }}>
+                    {visited.dwellMinutes}m
+                  </span>
+                )}
+                {isActive && !visited && (
                   <span style={{
                     position: 'absolute',
                     top: -2,
@@ -131,7 +200,7 @@ export function MapTab() {
                     width: 10,
                     height: 10,
                     borderRadius: '50%',
-                    background: animal.status === 'feeding' ? 'var(--coral)' : '#22C55E',
+                    background: animal.status === 'feeding' ? 'var(--coral)' : 'var(--green-active)',
                     border: '2px solid white',
                     animation: 'breathe 2s ease-in-out infinite',
                   }} />
@@ -156,9 +225,118 @@ export function MapTab() {
                     {['lion', 'giraffe', 'elephant', 'penguin', 'gorilla'].indexOf(animal.id) + 1}
                   </span>
                 )}
+
+                {/* Noise indicator for sensory sensitivity */}
+                {sensorySensitivity && noiseMap[animal.id] && (
+                  <span className={`noise-indicator noise-${noiseMap[animal.id]}`} style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    width: 14,
+                    height: 14,
+                    borderRadius: '50%',
+                    border: '2px solid white',
+                    fontSize: 7,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    {noiseMap[animal.id] === 'quiet' ? '🤫' : noiseMap[animal.id] === 'loud' ? '🔊' : ''}
+                  </span>
+                )}
               </motion.button>
             )
           })}
+
+          {/* Wander Mode: single glowing pin */}
+          {wanderMode && (() => {
+            const positions = [
+              { x: 22, y: 25 }, { x: 60, y: 28 }, { x: 75, y: 38 },
+              { x: 35, y: 40 }, { x: 50, y: 55 }, { x: 25, y: 58 },
+              { x: 68, y: 62 }, { x: 15, y: 72 }, { x: 45, y: 75 },
+              { x: 78, y: 78 }, { x: 55, y: 42 }, { x: 38, y: 85 },
+            ]
+            const idx = animals.indexOf(wanderTarget)
+            const pos = positions[idx % positions.length]
+            return (
+              <motion.div
+                key={`wander-${wanderTarget.id}`}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                style={{
+                  position: 'absolute',
+                  left: `${pos.x}%`,
+                  top: `${pos.y}%`,
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 15,
+                }}
+              >
+                {/* Glow ring */}
+                <div style={{
+                  position: 'absolute',
+                  inset: -12,
+                  borderRadius: '50%',
+                  border: '2px solid var(--gold)',
+                  opacity: 0.4,
+                  animation: 'pulse-ring 2s ease-out infinite',
+                }} />
+                <div style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  background: 'white',
+                  border: '3px solid var(--gold)',
+                  boxShadow: '0 4px 20px rgba(197, 214, 58, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 28,
+                }}>
+                  {wanderTarget.emoji}
+                </div>
+                <div style={{
+                  position: 'absolute',
+                  bottom: -8,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'var(--gold)',
+                  color: 'white',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: 8,
+                  whiteSpace: 'nowrap',
+                }}>
+                  {wanderTarget.walkTime} away
+                </div>
+              </motion.div>
+            )
+          })()}
+
+          {/* Wander Mode: dashed path from user to target */}
+          {wanderMode && (
+            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 12, pointerEvents: 'none' }}>
+              <path
+                d={`M 42% 52% Q 50% 45% ${(() => {
+                  const positions = [
+                    { x: 22, y: 25 }, { x: 60, y: 28 }, { x: 75, y: 38 },
+                    { x: 35, y: 40 }, { x: 50, y: 55 }, { x: 25, y: 58 },
+                    { x: 68, y: 62 }, { x: 15, y: 72 }, { x: 45, y: 75 },
+                    { x: 78, y: 78 }, { x: 55, y: 42 }, { x: 38, y: 85 },
+                  ]
+                  const idx = animals.indexOf(wanderTarget)
+                  const p = positions[idx % positions.length]
+                  return `${p.x}% ${p.y}%`
+                })()}`}
+                stroke="var(--gold)"
+                strokeWidth="2.5"
+                fill="none"
+                strokeDasharray="8 6"
+                opacity="0.6"
+              />
+            </svg>
+          )}
 
           {/* Comfort layer: facilities */}
           {activeLayer === 'comfort' && facilities.map((fac, i) => {
@@ -273,6 +451,49 @@ export function MapTab() {
           )}
         </div>
 
+        {/* Sensory: Quiet Route Alert */}
+        {sensorySensitivity && !wanderMode && activeLayer === 'default' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              position: 'absolute',
+              bottom: 160,
+              left: 16,
+              right: 16,
+              background: 'linear-gradient(135deg, #E8F5E9, #FFF8E1)',
+              borderRadius: 'var(--radius-lg)',
+              padding: 14,
+              boxShadow: 'var(--shadow-md)',
+              zIndex: 30,
+              border: '1px solid var(--green-light)',
+              display: 'flex',
+              gap: 12,
+              alignItems: 'center',
+            }}
+          >
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'var(--green-rich)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 18,
+              flexShrink: 0,
+            }}>🤫</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--green-deep)', marginBottom: 2 }}>
+                Quiet Route Available
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                Avoid Penguin Beach & Flamingo Cove for a calmer path through Elephant Odyssey
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* AI Spotlight */}
         {spotlightVisible && activeLayer === 'default' && (
           <motion.div
@@ -362,12 +583,24 @@ export function MapTab() {
         <div style={{
           position: 'absolute',
           right: 16,
-          bottom: 200,
+          bottom: wanderMode ? 260 : 200,
           display: 'flex',
           flexDirection: 'column',
           gap: 8,
           zIndex: 30,
         }}>
+          <button
+            onClick={() => setShowCrowdForecast(true)}
+            className="btn-icon"
+            style={{
+              background: 'white',
+              boxShadow: 'var(--shadow-md)',
+              width: 40,
+              height: 40,
+            }}
+          >
+            <BarChart3 size={18} color="var(--amber)" />
+          </button>
           <button className="btn-icon" style={{
             background: 'white',
             boxShadow: 'var(--shadow-md)',
@@ -386,8 +619,156 @@ export function MapTab() {
           </button>
         </div>
 
+        {/* Wander Mode Stats Bar */}
+        {wanderMode && (
+          <div style={{
+            position: 'absolute',
+            top: 130,
+            left: 16,
+            right: 16,
+            zIndex: 30,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <div style={{
+              flex: 1,
+              background: 'rgba(255,255,255,0.95)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: 'var(--radius-full)',
+              padding: '8px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              boxShadow: 'var(--shadow-md)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Compass size={14} color="var(--gold)" />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--gold)' }}>WANDER</span>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                <Eye size={12} style={{ display: 'inline', verticalAlign: -2, marginRight: 4 }} />
+                {wanderDiscoveries} found
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                <Clock size={12} style={{ display: 'inline', verticalAlign: -2, marginRight: 4 }} />
+                {visitedExhibits.length} visited
+              </div>
+            </div>
+            <button
+              onClick={() => setWanderMode(false)}
+              style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.95)', boxShadow: 'var(--shadow-md)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <X size={16} color="var(--text-secondary)" />
+            </button>
+          </div>
+        )}
+
+        {/* Wander Mode: Discovery Card */}
+        <AnimatePresence>
+          {wanderMode && (
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              style={{
+                position: 'absolute',
+                bottom: 88,
+                left: 16,
+                right: 16,
+                zIndex: 36,
+              }}
+            >
+              {/* Celebration overlay */}
+              <AnimatePresence>
+                {wanderCelebrate && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    style={{
+                      position: 'absolute',
+                      top: -60,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: 'var(--green-deep)',
+                      color: 'white',
+                      padding: '8px 20px',
+                      borderRadius: 'var(--radius-full)',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      boxShadow: 'var(--shadow-lg)',
+                      whiteSpace: 'nowrap',
+                      zIndex: 40,
+                    }}
+                  >
+                    Discovery #{wanderDiscoveries}!
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div style={{
+                background: 'white',
+                borderRadius: 'var(--radius-xl)',
+                padding: 18,
+                boxShadow: 'var(--shadow-lg)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 10 }}>
+                  <Sparkles size={14} color="var(--gold)" />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', letterSpacing: '0.05em' }}>NEXT DISCOVERY</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{
+                    width: 56, height: 56, borderRadius: 14,
+                    background: 'var(--gold-pale)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 30, flexShrink: 0,
+                  }}>
+                    {wanderTarget.emoji}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 16 }}>{wanderTarget.individual || wanderTarget.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{wanderTarget.zone} · {wanderTarget.walkTime} walk</div>
+                    <div style={{ fontSize: 12, color: 'var(--green-rich)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Sparkles size={11} /> {wanderTarget.fact}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                  <button
+                    onClick={() => {
+                      setWanderCelebrate(true)
+                      setWanderDiscoveries(d => d + 1)
+                      markExhibitVisited(wanderTarget.id, Math.floor(Math.random() * 15) + 3)
+                      setTimeout(() => {
+                        setWanderCelebrate(false)
+                        setWanderIndex(i => i + 1)
+                      }, 1500)
+                    }}
+                    className="btn btn-primary btn-sm"
+                    style={{ flex: 1, fontSize: 13 }}
+                  >
+                    <Navigation size={14} /> I'm Here!
+                  </button>
+                  <button
+                    onClick={() => setWanderIndex(i => i + 1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: 13 }}
+                  >
+                    Skip
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Bottom Sheet — Peek */}
-        <motion.div
+        {!wanderMode && <motion.div
           style={{
             position: 'absolute',
             bottom: 72,
@@ -504,7 +885,144 @@ export function MapTab() {
               )}
             </div>
           )}
-        </motion.div>
+        </motion.div>}
+
+        {/* Crowd Forecast Bottom Sheet */}
+        <AnimatePresence>
+          {showCrowdForecast && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="bottom-sheet-overlay"
+                onClick={() => setShowCrowdForecast(false)}
+              />
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="bottom-sheet"
+              >
+                <div className="bottom-sheet-handle" />
+                <div className="bottom-sheet-content">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <div>
+                      <h3 className="t-display-sm">Crowd Forecast</h3>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>Today's predicted traffic</div>
+                    </div>
+                    <button onClick={() => setShowCrowdForecast(false)}>
+                      <X size={22} color="var(--text-tertiary)" />
+                    </button>
+                  </div>
+
+                  {/* Overall Status */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: 14, borderRadius: 'var(--radius-md)',
+                    background: 'var(--amber-light)', marginBottom: 20,
+                  }}>
+                    <TrendingUp size={20} color="var(--amber)" />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--amber)' }}>Moderate — Building</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Peak expected around 12pm. Consider going to quieter zones now.</div>
+                    </div>
+                  </div>
+
+                  {/* Time Chart */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div className="t-heading" style={{ marginBottom: 12 }}>Today's Traffic</div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 100 }}>
+                      {crowdHours.map((h, i) => {
+                        const now = new Date().getHours()
+                        const hourNum = parseInt(h.hour)
+                        const isPast = hourNum < now
+                        const isCurrent = hourNum === now || (hourNum === now - 12)
+                        return (
+                          <div key={h.hour} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                            <div style={{
+                              width: '100%',
+                              height: h.level,
+                              borderRadius: '4px 4px 0 0',
+                              background: isCurrent
+                                ? 'var(--green-rich)'
+                                : h.level > 75
+                                  ? 'var(--coral-light)'
+                                  : h.level > 45
+                                    ? 'var(--amber-light)'
+                                    : 'var(--green-light)',
+                              opacity: isPast ? 0.4 : 1,
+                              transition: 'height 0.5s ease',
+                              position: 'relative',
+                            }}>
+                              {h.level > 75 && (
+                                <div style={{
+                                  position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
+                                  fontSize: 9, fontWeight: 700, color: 'var(--coral)', whiteSpace: 'nowrap',
+                                }}>
+                                  Peak
+                                </div>
+                              )}
+                            </div>
+                            <span style={{ fontSize: 8, color: 'var(--text-tertiary)', transform: 'rotate(-45deg)', whiteSpace: 'nowrap' }}>
+                              {h.hour}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Zone Breakdown */}
+                  <div>
+                    <div className="t-heading" style={{ marginBottom: 10 }}>By Zone</div>
+                    {zoneTraffic.map(zone => (
+                      <div key={zone.name} style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 0',
+                        borderBottom: '1px solid var(--border-light)',
+                      }}>
+                        <div style={{
+                          width: 10, height: 10, borderRadius: '50%',
+                          background: trafficColor[zone.level],
+                        }} />
+                        <div style={{ flex: 1, fontWeight: 500, fontSize: 14 }}>{zone.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{zone.wait}</div>
+                        <span className="badge" style={{
+                          background: zone.level === 'high' ? 'var(--coral-pale)' : zone.level === 'medium' ? 'var(--gold-pale)' : 'var(--green-pale)',
+                          color: trafficColor[zone.level],
+                          fontSize: 10,
+                          textTransform: 'capitalize',
+                        }}>
+                          {zone.level}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* AI Recommendation */}
+                  <div style={{
+                    background: 'var(--green-pale)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: 14,
+                    marginTop: 16,
+                    display: 'flex',
+                    gap: 10,
+                  }}>
+                    <Sparkles size={18} color="var(--green-rich)" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>AI Suggestion</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        Lost Forest and Urban Jungle are quiet right now. Head there before 11am for the best experience, then visit Africa Rocks after 2pm when crowds thin out.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Exhibit Detail Sheet */}
         <AnimatePresence>
@@ -532,7 +1050,7 @@ export function MapTab() {
                     borderRadius: 'var(--radius-lg)',
                     overflow: 'hidden',
                     marginBottom: 16,
-                    background: '#e8e2da',
+                    background: 'var(--bg-placeholder)',
                   }}>
                     <img src={selectedAnimal.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
@@ -560,6 +1078,33 @@ export function MapTab() {
                     <span className="badge" style={{ background: 'var(--sky-pale)', color: 'var(--sky)' }}>Avg {selectedAnimal.dwell}</span>
                     <span className="badge" style={{ background: 'var(--gold-pale)', color: 'var(--gold)' }}>{selectedAnimal.walkTime} walk</span>
                   </div>
+
+                  {/* Memory Pin: Your Visit Data */}
+                  {(() => {
+                    const visit = visitedExhibits.find(v => v.id === selectedAnimal.id)
+                    if (!visit) return null
+                    return (
+                      <div style={{
+                        background: 'var(--gold-pale)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: 12,
+                        marginTop: 12,
+                        border: '1px solid var(--gold-light)',
+                      }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)', letterSpacing: '0.05em', marginBottom: 6 }}>YOUR VISIT</div>
+                        <div style={{ display: 'flex', gap: 16 }}>
+                          <div>
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Visited at</div>
+                            <div style={{ fontSize: 14, fontWeight: 600 }}>{visit.visitedAt}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Time spent</div>
+                            <div style={{ fontSize: 14, fontWeight: 600 }}>{visit.dwellMinutes} min</div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   {/* AI Insight */}
                   <div style={{

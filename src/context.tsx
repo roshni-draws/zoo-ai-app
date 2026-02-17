@@ -39,6 +39,12 @@ export interface ActivePlan {
   distance: string
 }
 
+export interface VisitedExhibit {
+  id: string
+  visitedAt: string
+  dwellMinutes: number
+}
+
 interface AppState {
   onboarded: boolean
   visitState: VisitState
@@ -46,20 +52,37 @@ interface AppState {
   currentZoo: string
   activePlan: ActivePlan | null
   audioPlaying: boolean
+  audioPaused: boolean
   audioTitle: string
+  audioExpanded: boolean
+  audioDepth: 'quick' | 'standard' | 'deep'
+  audioAutoPlay: boolean
   assistantOpen: boolean
   selectedExhibit: string | null
   savedAnimals: string[]
+  wanderMode: boolean
+  visitedExhibits: VisitedExhibit[]
+  sensorySensitivity: boolean
+  simplifiedMode: boolean
+  collectedStamps: number
 
   setOnboarded: (v: boolean) => void
   setVisitState: (v: VisitState) => void
   setUser: (u: Partial<UserProfile>) => void
   setActivePlan: (p: ActivePlan | null) => void
   setAudioPlaying: (playing: boolean, title?: string) => void
+  setAudioPaused: (v: boolean) => void
+  setAudioExpanded: (v: boolean) => void
+  setAudioDepth: (v: 'quick' | 'standard' | 'deep') => void
+  setAudioAutoPlay: (v: boolean) => void
   setAssistantOpen: (v: boolean) => void
   setSelectedExhibit: (id: string | null) => void
   toggleSavedAnimal: (id: string) => void
   cycleVisitState: () => void
+  setWanderMode: (v: boolean) => void
+  markExhibitVisited: (id: string, dwellMinutes: number) => void
+  setSensorySensitivity: (v: boolean) => void
+  setSimplifiedMode: (v: boolean) => void
 }
 
 const defaultUser: UserProfile = {
@@ -88,10 +111,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentZoo] = useState('San Diego Zoo')
   const [activePlan, setActivePlan] = useState<ActivePlan | null>(null)
   const [audioPlaying, setAudioPlayingState] = useState(false)
+  const [audioPaused, setAudioPaused] = useState(false)
   const [audioTitle, setAudioTitle] = useState('')
+  const [audioExpanded, setAudioExpanded] = useState(false)
+  const [audioDepth, setAudioDepth] = useState<'quick' | 'standard' | 'deep'>('standard')
+  const [audioAutoPlay, setAudioAutoPlay] = useState(true)
   const [assistantOpen, setAssistantOpen] = useState(false)
   const [selectedExhibit, setSelectedExhibit] = useState<string | null>(null)
   const [savedAnimals, setSavedAnimals] = useState<string[]>(['lion', 'penguin'])
+  const [wanderMode, setWanderMode] = useState(false)
+  const [sensorySensitivity, setSensorySensitivity] = useState(false)
+  const [simplifiedMode, setSimplifiedMode] = useState(false)
+  const [visitedExhibits, setVisitedExhibits] = useState<VisitedExhibit[]>([
+    { id: 'lion', visitedAt: '9:15 AM', dwellMinutes: 12 },
+    { id: 'giraffe', visitedAt: '9:45 AM', dwellMinutes: 8 },
+  ])
 
   const setUser = useCallback((partial: Partial<UserProfile>) => {
     setUserState(prev => ({ ...prev, ...partial }))
@@ -100,6 +134,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const setAudioPlaying = useCallback((playing: boolean, title?: string) => {
     setAudioPlayingState(playing)
     if (title) setAudioTitle(title)
+    if (playing) setAudioPaused(false)
+    if (!playing) setAudioExpanded(false)
   }, [])
 
   const toggleSavedAnimal = useCallback((id: string) => {
@@ -116,14 +152,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
+  const markExhibitVisited = useCallback((id: string, dwellMinutes: number) => {
+    setVisitedExhibits(prev => {
+      if (prev.some(e => e.id === id)) return prev
+      return [...prev, { id, visitedAt: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), dwellMinutes }]
+    })
+  }, [])
+
+  const collectedStamps = visitedExhibits.length
+
   return (
     <AppContext.Provider
       value={{
         onboarded, visitState, user, currentZoo, activePlan,
-        audioPlaying, audioTitle, assistantOpen, selectedExhibit, savedAnimals,
+        audioPlaying, audioPaused, audioTitle, audioExpanded, audioDepth, audioAutoPlay,
+        assistantOpen, selectedExhibit, savedAnimals,
+        wanderMode, visitedExhibits,
+        sensorySensitivity, simplifiedMode, collectedStamps,
         setOnboarded, setVisitState, setUser, setActivePlan,
-        setAudioPlaying, setAssistantOpen, setSelectedExhibit,
+        setAudioPlaying, setAudioPaused, setAudioExpanded, setAudioDepth, setAudioAutoPlay,
+        setAssistantOpen, setSelectedExhibit,
         toggleSavedAnimal, cycleVisitState,
+        setWanderMode, markExhibitVisited,
+        setSensorySensitivity, setSimplifiedMode,
       }}
     >
       {children}

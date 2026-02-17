@@ -1,55 +1,73 @@
 /* ============================================
-   ZOO AI — "Wilderness Luxe" Design System
+   ZOO AI — Fiverr Palette + SF Pro Design System
    ============================================ */
 
 :root {
   /* Core palette */
-  --bg-primary: #FBF8F4;
+  --bg-primary: #F5F5F0;
   --bg-card: #FFFFFF;
-  --bg-dark: #0D2818;
-  --bg-dark-soft: #143824;
-  --bg-overlay: rgba(13, 40, 24, 0.6);
+  --bg-dark: #0D1A0D;
+  --bg-dark-soft: #1A2E1A;
+  --bg-overlay: rgba(13, 26, 13, 0.6);
 
   /* Text */
   --text-primary: #1A1A1A;
-  --text-secondary: #6B7280;
-  --text-tertiary: #9CA3AF;
-  --text-inverse: #FBF8F4;
+  --text-secondary: #5A6B5A;
+  --text-tertiary: #8A9B8A;
+  --text-inverse: #F5F5F0;
 
-  /* Accent colors */
-  --green-deep: #0D2818;
-  --green-rich: #1A5632;
-  --green-mid: #2D7A4F;
-  --green-sage: #7BA889;
-  --green-light: #D4E8D1;
-  --green-pale: #EDF5EB;
+  /* Fiverr Green (primary) */
+  --green-deep: #1A3D1F;
+  --green-rich: #2E6B34;
+  --green-mid: #4CAF50;
+  --green-sage: #7BC67F;
+  --green-light: #C5E8C8;
+  --green-pale: #E8F5E9;
 
-  --gold: #C8956C;
-  --gold-light: #E8C9A8;
-  --gold-pale: #F5EBE0;
+  /* Fiverr Yellow (accent) */
+  --gold: #C5D63A;
+  --gold-light: #EAF0B0;
+  --gold-pale: #F5F8E0;
+  --yellow-medium: #7A8419;
+  --yellow-dark: #3D4A10;
 
-  --coral: #E05A3A;
-  --coral-light: #F5A490;
-  --coral-pale: #FDE8E1;
+  /* Fiverr Pink (accent) */
+  --coral: #E868A0;
+  --coral-light: #F0C0D8;
+  --coral-pale: #FBE4EF;
+  --pink-medium: #B8486C;
+  --pink-dark: #6B1840;
 
+  /* Fiverr Orange (accent) */
+  --amber: #E88030;
+  --amber-light: #F0C8B0;
+  --orange-pale: #FDF0E6;
+  --orange-medium: #A03818;
+  --orange-dark: #601810;
+
+  /* Sky (kept for compatibility) */
   --sky: #4A90D9;
   --sky-light: #A3C8F0;
   --sky-pale: #E8F1FB;
 
-  --amber: #D4952A;
-  --amber-light: #F0D48A;
+  /* Semantic / missing tokens */
+  --gold-dark: #a67c00;
+  --green-active: #22C55E;
+  --bg-secondary: #EEEFE9;
+  --bg-placeholder: #e8e2da;
+  --text-warning: #8B5E0A;
 
   /* Borders & shadows */
-  --border: #E8E2DA;
-  --border-light: #F0EBE4;
-  --shadow-sm: 0 1px 3px rgba(13, 40, 24, 0.05);
-  --shadow-md: 0 4px 16px rgba(13, 40, 24, 0.08);
-  --shadow-lg: 0 8px 32px rgba(13, 40, 24, 0.12);
-  --shadow-xl: 0 16px 48px rgba(13, 40, 24, 0.16);
+  --border: #D8E0D8;
+  --border-light: #E8F0E8;
+  --shadow-sm: 0 1px 3px rgba(13, 26, 13, 0.06);
+  --shadow-md: 0 4px 16px rgba(13, 26, 13, 0.10);
+  --shadow-lg: 0 8px 32px rgba(13, 26, 13, 0.14);
+  --shadow-xl: 0 16px 48px rgba(13, 26, 13, 0.18);
 
-  /* Typography */
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-body: 'DM Sans', -apple-system, sans-serif;
+  /* Typography — Fraunces (display) + DM Sans (body) */
+  --font-display: 'Fraunces', 'SF Pro Display', Georgia, serif;
+  --font-body: 'DM Sans', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Spacing */
   --space-xs: 4px;
@@ -111,7 +129,7 @@ body {
 
 @media (min-width: 431px) {
   body {
-    background: #E8E2DA;
+    background: #D8E0D8;
   }
   #root {
     min-height: 100vh;
@@ -148,33 +166,30 @@ a {
 .t-display-xl {
   font-family: var(--font-display);
   font-size: 32px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
-  font-variation-settings: 'opsz' 72;
 }
 
 .t-display-lg {
   font-family: var(--font-display);
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.01em;
-  font-variation-settings: 'opsz' 48;
 }
 
 .t-display-md {
   font-family: var(--font-display);
   font-size: 22px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.25;
-  font-variation-settings: 'opsz' 36;
 }
 
 .t-display-sm {
   font-family: var(--font-display);
   font-size: 18px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.3;
 }
 
@@ -288,8 +303,8 @@ a {
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(26, 86, 50, 0.3); }
-  50% { box-shadow: 0 0 20px rgba(26, 86, 50, 0.6); }
+  0%, 100% { box-shadow: 0 0 8px rgba(46, 107, 52, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(46, 107, 52, 0.6); }
 }
 
 .animate-in {
@@ -361,7 +376,7 @@ a {
 }
 
 .card-gold {
-  background: linear-gradient(135deg, #C8956C 0%, #A87650 100%);
+  background: linear-gradient(135deg, var(--gold) 0%, var(--yellow-medium) 100%);
   color: var(--text-inverse);
   border: none;
 }
@@ -405,7 +420,7 @@ a {
 }
 
 .btn-gold {
-  background: linear-gradient(135deg, var(--gold) 0%, #B8824F 100%);
+  background: linear-gradient(135deg, var(--gold) 0%, var(--yellow-medium) 100%);
   color: white;
 }
 
@@ -536,7 +551,7 @@ a {
 
 .input:focus {
   border-color: var(--green-rich);
-  box-shadow: 0 0 0 3px rgba(26, 86, 50, 0.1);
+  box-shadow: 0 0 0 3px rgba(46, 107, 52, 0.12);
 }
 
 .input::placeholder {
@@ -650,8 +665,182 @@ a {
    ============================================ */
 
 .skeleton {
-  background: linear-gradient(90deg, var(--border-light) 25%, #F5EFE8 50%, var(--border-light) 75%);
+  background: linear-gradient(90deg, var(--border-light) 25%, #F0F5F0 50%, var(--border-light) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius-md);
+}
+
+.skeleton-text {
+  height: 14px;
+  border-radius: 7px;
+}
+
+.skeleton-text-sm {
+  height: 11px;
+  border-radius: 6px;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-card {
+  border-radius: var(--radius-lg);
+  height: 120px;
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-3xl) var(--space-xl);
+  color: var(--text-secondary);
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-md);
+  opacity: 0.7;
+}
+
+.empty-state-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.empty-state-text {
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 260px;
+  margin: 0 auto var(--space-lg);
+}
+
+/* ============================================
+   Micro-interaction helpers
+   ============================================ */
+
+.press-scale {
+  transition: transform 0.15s ease;
+}
+
+.press-scale:active {
+  transform: scale(0.97);
+}
+
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:active {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Stagger children animation */
+.stagger-list > * {
+  animation: fadeInUp 0.4s ease-out both;
+}
+
+.stagger-list > *:nth-child(1) { animation-delay: 0.00s; }
+.stagger-list > *:nth-child(2) { animation-delay: 0.05s; }
+.stagger-list > *:nth-child(3) { animation-delay: 0.10s; }
+.stagger-list > *:nth-child(4) { animation-delay: 0.15s; }
+.stagger-list > *:nth-child(5) { animation-delay: 0.20s; }
+.stagger-list > *:nth-child(6) { animation-delay: 0.25s; }
+.stagger-list > *:nth-child(7) { animation-delay: 0.30s; }
+.stagger-list > *:nth-child(8) { animation-delay: 0.35s; }
+
+/* ============================================
+   Simplified Interface Mode
+   ============================================ */
+
+.simplified-mode {
+  font-size: 18px;
+}
+
+.simplified-mode .t-display-xl { font-size: 36px; }
+.simplified-mode .t-display-lg { font-size: 30px; }
+.simplified-mode .t-display-md { font-size: 26px; }
+.simplified-mode .t-display-sm { font-size: 22px; }
+.simplified-mode .t-heading { font-size: 20px; }
+.simplified-mode .t-body { font-size: 17px; }
+.simplified-mode .t-body-sm { font-size: 15px; }
+.simplified-mode .t-caption { font-size: 14px; }
+.simplified-mode .t-label { font-size: 13px; }
+
+.simplified-mode .btn {
+  padding: 16px 32px;
+  font-size: 17px;
+  min-height: 52px;
+}
+
+.simplified-mode .btn-sm {
+  padding: 12px 20px;
+  font-size: 15px;
+  min-height: 44px;
+}
+
+.simplified-mode .chip {
+  padding: 10px 18px;
+  font-size: 15px;
+  min-height: 44px;
+}
+
+.simplified-mode .card {
+  padding: var(--space-xl);
+}
+
+.simplified-mode .badge {
+  font-size: 13px;
+  padding: 4px 12px;
+}
+
+/* ============================================
+   Sensory Sensitivity Mode
+   ============================================ */
+
+.sensory-mode .badge-live {
+  animation: none !important;
+}
+
+.sensory-mode .badge-live::before {
+  display: none;
+}
+
+/* Noise level indicator */
+.noise-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.noise-quiet {
+  background: var(--green-pale);
+  color: var(--green-rich);
+}
+
+.noise-moderate {
+  background: var(--gold-pale);
+  color: var(--gold-dark);
+}
+
+.noise-loud {
+  background: var(--coral-pale);
+  color: var(--coral);
+}
+
+/* Reduce motion for sensory mode */
+.sensory-mode * {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.15s !important;
 }

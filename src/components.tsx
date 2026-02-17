@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, MapPin, Camera, CalendarDays, User, MessageCircle, X, Send, ChevronLeft, Pause, Play, SkipForward, Volume2 } from 'lucide-react'
+import { Home, MapPin, Camera, CalendarDays, User, MessageCircle, X, Send, ChevronLeft, Pause, Play, SkipForward, SkipBack, Volume2, ChevronDown, Settings, Radio, BookOpen, Sparkles } from 'lucide-react'
 import { useApp } from './context'
 
 /* ============================================
@@ -117,15 +117,59 @@ function BottomNav() {
    Floating AI Assistant
    ============================================ */
 
-const assistantSuggestions = [
-  "What should we see next?",
-  "Where's somewhere quiet?",
-  "Best restaurant for kids?",
-  "How do I get to the penguins?",
-]
+const suggestionsByContext: Record<string, string[]> = {
+  home: [
+    "What should we see today?",
+    "What's happening right now?",
+    "Best time to arrive?",
+    "Plan my visit",
+  ],
+  map: [
+    "What's near me?",
+    "Find a quiet spot",
+    "How do I get to the penguins?",
+    "Where are the crowds?",
+  ],
+  scan: [
+    "What animal is this?",
+    "Tell me more about this exhibit",
+    "Is there a feeding time?",
+    "Play audio guide",
+  ],
+  plan: [
+    "Suggest a plan for my family",
+    "Add a lunch break",
+    "What should we skip?",
+    "Change my itinerary",
+  ],
+  profile: [
+    "Show my visit stats",
+    "What badges can I earn?",
+    "Update my preferences",
+    "Share my visit card",
+  ],
+  default: [
+    "What should we see next?",
+    "Where's somewhere quiet?",
+    "Best restaurant for kids?",
+    "How do I get to the penguins?",
+  ],
+}
+
+function getContextKey(pathname: string): string {
+  if (pathname === '/' || pathname.startsWith('/home')) return 'home'
+  if (pathname.startsWith('/map')) return 'map'
+  if (pathname.startsWith('/scan')) return 'scan'
+  if (pathname.startsWith('/plan') || pathname.startsWith('/itinerary')) return 'plan'
+  if (pathname.startsWith('/profile')) return 'profile'
+  return 'default'
+}
 
 function FloatingAssistant() {
   const { assistantOpen, setAssistantOpen } = useApp()
+  const location = useLocation()
+  const contextKey = getContextKey(location.pathname)
+  const suggestions = suggestionsByContext[contextKey] || suggestionsByContext.default
   const [messages, setMessages] = useState<Array<{role: string, text: string}>>([
     { role: 'ai', text: "Hi! I'm your zoo companion. Ask me anything about the zoo, animals, or what to do next." }
   ])
@@ -234,7 +278,7 @@ function FloatingAssistant() {
               overflowX: 'auto',
               scrollbarWidth: 'none',
             }}>
-              {assistantSuggestions.map(s => (
+              {suggestions.map(s => (
                 <button
                   key={s}
                   onClick={() => handleSend(s)}
@@ -328,7 +372,7 @@ function FloatingAssistant() {
    ============================================ */
 
 function AudioMiniPlayer() {
-  const { audioPlaying, audioTitle, setAudioPlaying } = useApp()
+  const { audioPlaying, audioPaused, audioTitle, setAudioPlaying, setAudioPaused, setAudioExpanded } = useApp()
 
   if (!audioPlaying) return null
 
@@ -353,7 +397,9 @@ function AudioMiniPlayer() {
         zIndex: 95,
         color: 'white',
         boxShadow: 'var(--shadow-lg)',
+        cursor: 'pointer',
       }}
+      onClick={() => setAudioExpanded(true)}
     >
       <Volume2 size={18} style={{ opacity: 0.7, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -363,21 +409,309 @@ function AudioMiniPlayer() {
         <div style={{ height: 3, background: 'rgba(255,255,255,0.2)', borderRadius: 2, marginTop: 4 }}>
           <motion.div
             initial={{ width: '0%' }}
-            animate={{ width: '45%' }}
-            transition={{ duration: 30, ease: 'linear' }}
+            animate={{ width: audioPaused ? '45%' : '45%' }}
+            transition={{ duration: audioPaused ? 0 : 30, ease: 'linear' }}
             style={{ height: '100%', background: 'var(--gold)', borderRadius: 2 }}
           />
         </div>
       </div>
-      <button onClick={() => setAudioPlaying(true)} style={{ color: 'white', opacity: 0.8 }}>
-        <Pause size={18} />
+      <button onClick={e => { e.stopPropagation(); setAudioPaused(!audioPaused) }} style={{ color: 'white', opacity: 0.8 }}>
+        {audioPaused ? <Play size={18} /> : <Pause size={18} />}
       </button>
-      <button style={{ color: 'white', opacity: 0.8 }}>
+      <button onClick={e => e.stopPropagation()} style={{ color: 'white', opacity: 0.8 }}>
         <SkipForward size={18} />
       </button>
-      <button onClick={() => setAudioPlaying(false)} style={{ color: 'white', opacity: 0.5 }}>
+      <button onClick={e => { e.stopPropagation(); setAudioPlaying(false) }} style={{ color: 'white', opacity: 0.5 }}>
         <X size={16} />
       </button>
+    </motion.div>
+  )
+}
+
+/* ============================================
+   Expanded Audio Player
+   ============================================ */
+
+const audioQueue = [
+  { title: 'African Elephant — Tembo', emoji: '🐘', duration: '3:45', zone: 'Elephant Odyssey' },
+  { title: 'Polar Bear — Chinook', emoji: '🐻‍❄️', duration: '2:30', zone: 'Polar Rim' },
+  { title: 'Gorilla — Koga', emoji: '🦍', duration: '4:10', zone: 'Lost Forest' },
+]
+
+const sampleTranscript = [
+  { time: '0:00', text: 'Welcome to one of the most remarkable exhibits at the San Diego Zoo.' },
+  { time: '0:12', text: 'This species has been part of our conservation program since 1982.' },
+  { time: '0:28', text: 'Notice the distinctive markings — each individual has a unique pattern, much like human fingerprints.' },
+  { time: '0:45', text: 'Our keepers have built strong bonds with these animals through positive reinforcement training.' },
+  { time: '1:02', text: 'The habitat you see was designed to mimic their natural environment, with temperature and humidity carefully controlled.' },
+  { time: '1:20', text: 'Conservation efforts have helped increase wild populations by 30% over the past decade.' },
+]
+
+function ExpandedAudioPlayer() {
+  const {
+    audioPlaying, audioPaused, audioTitle, audioExpanded, audioDepth, audioAutoPlay,
+    setAudioPlaying, setAudioPaused, setAudioExpanded, setAudioDepth, setAudioAutoPlay,
+  } = useApp()
+  const [showSettings, setShowSettings] = useState(false)
+  const [activeTranscriptIdx, setActiveTranscriptIdx] = useState(2)
+
+  if (!audioPlaying || !audioExpanded) return null
+
+  const titleParts = audioTitle.split(' — ')
+  const animalName = titleParts[0] || 'Audio Guide'
+  const individual = titleParts[1] || ''
+
+  return (
+    <motion.div
+      initial={{ y: '100%' }}
+      animate={{ y: 0 }}
+      exit={{ y: '100%' }}
+      transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'var(--bg-primary)',
+        zIndex: 110,
+        display: 'flex',
+        flexDirection: 'column',
+        maxWidth: 430,
+        margin: '0 auto',
+      }}
+    >
+      {/* Header */}
+      <div style={{
+        padding: 'calc(env(safe-area-inset-top, 12px) + 12px) 20px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <button onClick={() => setAudioExpanded(false)}>
+          <ChevronDown size={24} />
+        </button>
+        <span className="t-heading">Now Playing</span>
+        <button onClick={() => setShowSettings(!showSettings)}>
+          <Settings size={20} color={showSettings ? 'var(--green-rich)' : 'var(--text-tertiary)'} />
+        </button>
+      </div>
+
+      {/* Settings Panel */}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{ padding: '0 20px 16px' }}>
+              <div className="card" style={{ padding: 16 }}>
+                {/* Auto-play toggle */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Radio size={16} color="var(--text-secondary)" />
+                    <span style={{ fontSize: 14, fontWeight: 500 }}>Auto-play nearby</span>
+                  </div>
+                  <button
+                    onClick={() => setAudioAutoPlay(!audioAutoPlay)}
+                    style={{
+                      width: 44, height: 24, borderRadius: 12,
+                      background: audioAutoPlay ? 'var(--green-rich)' : 'var(--border)',
+                      position: 'relative', transition: 'background 0.2s ease',
+                    }}
+                  >
+                    <motion.div
+                      animate={{ x: audioAutoPlay ? 22 : 2 }}
+                      style={{
+                        width: 20, height: 20, borderRadius: '50%',
+                        background: 'white', position: 'absolute', top: 2,
+                        boxShadow: 'var(--shadow-sm)',
+                      }}
+                    />
+                  </button>
+                </div>
+
+                {/* Content Depth */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <BookOpen size={16} color="var(--text-secondary)" />
+                    <span style={{ fontSize: 14, fontWeight: 500 }}>Content Depth</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {(['quick', 'standard', 'deep'] as const).map(d => (
+                      <button
+                        key={d}
+                        onClick={() => setAudioDepth(d)}
+                        className={`chip ${audioDepth === d ? 'chip-active' : ''}`}
+                        style={{ flex: 1, justifyContent: 'center', fontSize: 12 }}
+                      >
+                        {d === 'quick' ? '⚡ Quick' : d === 'standard' ? '📖 Standard' : '🔬 Deep'}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 6 }}>
+                    {audioDepth === 'quick' ? '~1 min · Key facts only' : audioDepth === 'standard' ? '~3 min · Facts + stories' : '~5 min · Full deep dive with conservation details'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Now Playing Card */}
+      <div style={{ padding: '0 20px', marginBottom: 20 }}>
+        <div style={{
+          height: 200,
+          borderRadius: 'var(--radius-xl)',
+          background: 'linear-gradient(135deg, var(--green-deep), var(--green-rich))',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, opacity: 0.05 }}>
+            <div style={{ position: 'absolute', top: '20%', left: '10%', fontSize: 100 }}>🌿</div>
+            <div style={{ position: 'absolute', bottom: '10%', right: '10%', fontSize: 80 }}>🍃</div>
+          </div>
+          <motion.div
+            animate={!audioPaused ? { scale: [1, 1.05, 1] } : {}}
+            transition={{ duration: 2, repeat: Infinity }}
+            style={{ fontSize: 64, marginBottom: 8 }}
+          >
+            🎧
+          </motion.div>
+          <div style={{ color: 'white', fontWeight: 700, fontSize: 18, textAlign: 'center' }}>{animalName}</div>
+          {individual && <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 2 }}>{individual}</div>}
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div style={{ padding: '0 20px', marginBottom: 8 }}>
+        <div style={{ height: 6, background: 'var(--border-light)', borderRadius: 3, cursor: 'pointer', position: 'relative' }}>
+          <div style={{ width: '45%', height: '100%', background: 'var(--green-rich)', borderRadius: 3 }} />
+          <div style={{
+            position: 'absolute', top: -5, left: '45%', transform: 'translateX(-50%)',
+            width: 16, height: 16, borderRadius: '50%',
+            background: 'var(--green-rich)', border: '3px solid white',
+            boxShadow: 'var(--shadow-sm)',
+          }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>1:20</span>
+          <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>3:12</span>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, padding: '8px 20px 16px' }}>
+        <button style={{ color: 'var(--text-secondary)' }}>
+          <SkipBack size={24} />
+        </button>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setAudioPaused(!audioPaused)}
+          style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'var(--green-deep)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'var(--shadow-lg)',
+          }}
+        >
+          {audioPaused ? <Play size={28} color="white" style={{ marginLeft: 3 }} /> : <Pause size={28} color="white" />}
+        </motion.button>
+        <button style={{ color: 'var(--text-secondary)' }}>
+          <SkipForward size={24} />
+        </button>
+      </div>
+
+      {/* Transcript + Queue (scrollable) */}
+      <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 100px' }}>
+        {/* Transcript */}
+        <div style={{ marginBottom: 24 }}>
+          <div className="t-heading" style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <BookOpen size={16} /> Transcript
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {sampleTranscript.map((line, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveTranscriptIdx(i)}
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: i === activeTranscriptIdx ? 'var(--green-pale)' : 'transparent',
+                  textAlign: 'left',
+                  transition: 'background 0.2s ease',
+                }}
+              >
+                <span style={{
+                  fontSize: 11,
+                  color: i === activeTranscriptIdx ? 'var(--green-rich)' : 'var(--text-tertiary)',
+                  fontWeight: 600,
+                  flexShrink: 0,
+                  width: 32,
+                }}>
+                  {line.time}
+                </span>
+                <span style={{
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: i <= activeTranscriptIdx ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  fontWeight: i === activeTranscriptIdx ? 500 : 400,
+                }}>
+                  {line.text}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Up Next Queue */}
+        <div>
+          <div className="t-heading" style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Sparkles size={16} /> Up Next
+            {audioAutoPlay && <span className="badge badge-active" style={{ fontSize: 9, marginLeft: 4 }}>Auto</span>}
+          </div>
+          {audioQueue.map((item, i) => (
+            <motion.div
+              key={item.title}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="card"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: 12,
+                marginBottom: 8,
+              }}
+            >
+              <div style={{
+                width: 40, height: 40, borderRadius: 10,
+                background: 'var(--green-pale)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 22, flexShrink: 0,
+              }}>
+                {item.emoji}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {item.title}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{item.zone} · {item.duration}</div>
+              </div>
+              <button style={{ color: 'var(--text-tertiary)' }}>
+                <Play size={16} />
+              </button>
+            </motion.div>
+          ))}
+        </div>
+      </div>
     </motion.div>
   )
 }
@@ -387,12 +721,21 @@ function AudioMiniPlayer() {
    ============================================ */
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { sensorySensitivity, simplifiedMode } = useApp()
+  const classes = [
+    sensorySensitivity && 'sensory-mode',
+    simplifiedMode && 'simplified-mode',
+  ].filter(Boolean).join(' ')
+
   return (
-    <div style={{ position: 'relative' }}>
+    <div className={classes || undefined} style={{ position: 'relative' }}>
       {children}
       <AudioMiniPlayer />
       <FloatingAssistant />
       <BottomNav />
+      <AnimatePresence>
+        <ExpandedAudioPlayer />
+      </AnimatePresence>
     </div>
   )
 }
@@ -461,7 +804,7 @@ export function AnimalCard({ animal, onClick, small }: { animal: any, onClick?: 
         borderRadius: 'var(--radius-md)',
         overflow: 'hidden',
         position: 'relative',
-        background: '#e8e2da',
+        background: 'var(--bg-placeholder)',
       }}>
         <img
           src={animal.image}
@@ -519,7 +862,7 @@ export function EventCard({ event }: { event: any }) {
 
 export function StatusDot({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    active: '#22C55E',
+    active: 'var(--green-active)',
     feeding: '#EF4444',
     sleeping: '#60A5FA',
     quiet: '#D4A574',
@@ -535,6 +878,47 @@ export function StatusDot({ status }: { status: string }) {
       display: 'inline-block',
       ...(status === 'feeding' ? { animation: 'breathe 2s ease-in-out infinite' } : {}),
     }} />
+  )
+}
+
+export function SkeletonCard({ height = 120, style }: { height?: number, style?: React.CSSProperties }) {
+  return (
+    <div className="skeleton skeleton-card" style={{ height, ...style }} />
+  )
+}
+
+export function SkeletonList({ count = 3 }: { count?: number }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="card" style={{ display: 'flex', gap: 12, padding: 14, alignItems: 'center' }}>
+          <div className="skeleton skeleton-circle" style={{ width: 44, height: 44, flexShrink: 0 }} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="skeleton skeleton-text" style={{ width: `${70 + Math.random() * 30}%` }} />
+            <div className="skeleton skeleton-text-sm" style={{ width: `${40 + Math.random() * 30}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function EmptyState({ icon, title, message, action, onAction }: {
+  icon: string
+  title: string
+  message: string
+  action?: string
+  onAction?: () => void
+}) {
+  return (
+    <div className="empty-state">
+      <div className="empty-state-icon">{icon}</div>
+      <div className="empty-state-title">{title}</div>
+      <div className="empty-state-text">{message}</div>
+      {action && onAction && (
+        <button onClick={onAction} className="btn btn-primary btn-sm">{action}</button>
+      )}
+    </div>
   )
 }
 
